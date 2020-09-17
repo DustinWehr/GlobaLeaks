@@ -666,12 +666,7 @@ class PasswordResetValidationKeyword(UserNodeKeyword):
     data_keys = UserNodeKeyword.data_keys + ['reset_token']
 
     def UrlPath(self):
-        if self.data['user']['encryption']:
-            url = '/#/password/reset/recovery'
-        else:
-            url = '/#/password/reset'
-
-        return url + '?token=' + self.data['reset_token']
+        return '/#/password/reset?token=' + self.data['reset_token']
 
 
 class IdentityAccessRequestKeyword(UserNodeKeyword):
