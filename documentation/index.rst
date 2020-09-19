@@ -46,4 +46,8 @@ Welcome to GlobaLeaks's Documentation!
         :name: developer
         :maxdepth: 1
 
-        developer/index.rst
+        developer/Environment.rst
+        developer/CodeStyleGuidelines.rst
+        developer/SoftwareLibraries.rst
+        developer/ReleaseProcedure.rst
+        developer/CodeDocumentation.rst
