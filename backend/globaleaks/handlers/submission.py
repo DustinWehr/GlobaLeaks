@@ -277,6 +277,8 @@ def db_create_receivertip(session, receiver, internaltip, can_access_whistleblow
 def db_create_submission(session, tid, request, token, client_using_tor):
     answers = request['answers']
 
+    tenant = db_get(session, models.Tenant, models.Tenant.id == tid)
+
     context, questionnaire = db_get(session,
                                     (models.Context, models.Questionnaire),
                                     (models.Context.id == request['context_id'],
@@ -337,22 +339,11 @@ def db_create_submission(session, tid, request, token, client_using_tor):
 
     crypto_is_available = State.tenant_cache[tid].encryption
 
-    if crypto_is_available:
-        """
-        Handle the condition in which all the following situations are met:
-        - Encryption is enabled
-        - All the recipients have not performed first access and so encryption could not be applied
-
-        This the typical situation that is typically verified when:
-        - The system is initially setup
-        - The system is live and recipients are subject to urgent turnover
-
-        In this special situation the system accepts and deliver submissions withou applying encryption.
-        """
-        if session.query(models.User).filter(models.User.id.in_(request['receivers']), models.User.crypto_pub_key == '').count() == len(request['receivers']):
-            crypto_is_available = False
-        else:
-            crypto_tip_prv_key, itip.crypto_tip_pub_key = GCE.generate_keypair()
+    if crypto_is_available and \
+        session.query(models.User).filter(models.User.id.in_(request['receivers']), models.User.crypto_pub_key == '').count():
+        crypto_is_available = False
+    else:
+        crypto_tip_prv_key, itip.crypto_tip_pub_key = GCE.generate_keypair()
 
     receipt = ''
 
@@ -427,10 +418,10 @@ def db_create_submission(session, tid, request, token, client_using_tor):
     for user in session.query(models.User).filter(models.User.id.in_(request['receivers'])):
         _tip_key = b''
         if crypto_is_available:
-            if user.crypto_pub_key:
-                _tip_key = GCE.asymmetric_encrypt(user.crypto_pub_key, crypto_tip_prv_key)
-            else:
+            if not user.crypto_pub_key:
                 continue
+
+            _tip_key = GCE.asymmetric_encrypt(user.crypto_pub_key, crypto_tip_prv_key)
 
         db_create_receivertip(session, user, itip, can_access_whistleblower_identity, _tip_key)
 
